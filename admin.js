@@ -156,19 +156,35 @@ async function loadAdminProducts() {
 
         querySnapshot.forEach((docSnap) => {
             const product = docSnap.data();
+            const stockLabel = product.stock <= 0
+                ? `<span style="color: var(--danger); font-weight: 600;">Esgotado</span>`
+                : `<span style="color: var(--primary-color); font-weight: 600;">Estoque: ${product.stock}</span>`;
+
             const div = document.createElement('div');
             div.className = 'admin-product-item';
+            div.id = `product-item-${docSnap.id}`;
             div.innerHTML = `
-                <div style="display: flex; align-items: center;">
-                    <img src="${product.imageUrl}" alt="${product.name}">
-                    <div>
-                        <strong>${product.name}</strong><br>
-                        <span style="color: var(--text-muted); font-size: 0.875rem;">
-                            R$ ${product.price.toFixed(2)} | Estoque: ${product.stock}
-                        </span>
+                <div style="display: flex; align-items: center; flex: 1; gap: 0.75rem;">
+                    <img src="${product.imageUrl}" alt="${product.name}" style="width:55px;height:55px;border-radius:8px;object-fit:cover;flex-shrink:0;">
+                    <div style="flex:1;">
+                        <div id="view-${docSnap.id}">
+                            <strong>${product.name}</strong><br>
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">R$ ${parseFloat(product.price).toFixed(2).replace('.',',')} &nbsp;|&nbsp; ${stockLabel}</span>
+                        </div>
+                        <div id="edit-${docSnap.id}" style="display:none; margin-top: 0.5rem;">
+                            <input type="text" id="edit-name-${docSnap.id}" value="${product.name}" placeholder="Nome" style="width:100%; padding:6px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:6px; font-family:inherit;">
+                            <div style="display:flex; gap:6px;">
+                                <input type="number" id="edit-price-${docSnap.id}" value="${product.price}" placeholder="Preço" step="0.01" style="width:50%; padding:6px; border:1px solid var(--border-color); border-radius:6px; font-family:inherit;">
+                                <input type="number" id="edit-stock-${docSnap.id}" value="${product.stock}" placeholder="Estoque" style="width:50%; padding:6px; border:1px solid var(--border-color); border-radius:6px; font-family:inherit;">
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <button class="btn-danger" onclick="deleteProduct('${docSnap.id}')">Excluir</button>
+                <div style="display:flex; flex-direction:column; gap:6px; margin-left:8px;">
+                    <button id="btn-edit-${docSnap.id}" class="btn-edit" onclick="toggleEdit('${docSnap.id}')">✏️ Editar</button>
+                    <button id="btn-save-${docSnap.id}" class="btn-save hidden" onclick="saveEdit('${docSnap.id}')">💾 Salvar</button>
+                    <button class="btn-danger" onclick="deleteProduct('${docSnap.id}')">🗑️ Excluir</button>
+                </div>
             `;
             adminProductsContainer.appendChild(div);
         });
@@ -178,12 +194,59 @@ async function loadAdminProducts() {
     }
 }
 
+// Alternar modo de edição
+window.toggleEdit = function(id) {
+    const viewDiv = document.getElementById(`view-${id}`);
+    const editDiv = document.getElementById(`edit-${id}`);
+    const btnEdit = document.getElementById(`btn-edit-${id}`);
+    const btnSave = document.getElementById(`btn-save-${id}`);
+
+    const isEditing = !editDiv.classList.contains('hidden') && editDiv.style.display !== 'none';
+    
+    if (isEditing) {
+        // Cancelar edição
+        viewDiv.style.display = 'block';
+        editDiv.style.display = 'none';
+        btnEdit.textContent = '✏️ Editar';
+        btnSave.classList.add('hidden');
+    } else {
+        // Abrir edição
+        viewDiv.style.display = 'none';
+        editDiv.style.display = 'block';
+        btnEdit.textContent = '❌ Cancelar';
+        btnSave.classList.remove('hidden');
+    }
+}
+
+// Salvar edição
+window.saveEdit = async function(id) {
+    const { updateDoc, doc: firestoreDoc } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js");
+    
+    const name = document.getElementById(`edit-name-${id}`).value.trim();
+    const price = parseFloat(document.getElementById(`edit-price-${id}`).value);
+    const stock = parseInt(document.getElementById(`edit-stock-${id}`).value);
+    
+    if (!name || isNaN(price) || isNaN(stock)) {
+        alert('Preencha todos os campos corretamente.');
+        return;
+    }
+
+    try {
+        await updateDoc(firestoreDoc(db, "products", id), { name, price, stock });
+        alert('Produto atualizado com sucesso!');
+        loadAdminProducts();
+    } catch (error) {
+        console.error("Erro ao salvar:", error);
+        alert('Erro ao salvar. Tente novamente.');
+    }
+}
+
 // Excluir produto
 window.deleteProduct = async function(id) {
     if (confirm('Tem certeza que deseja excluir este produto?')) {
         try {
             await deleteDoc(doc(db, "products", id));
-            loadAdminProducts(); // Atualiza a lista
+            loadAdminProducts();
         } catch (error) {
             console.error("Erro ao excluir:", error);
             alert("Erro ao excluir produto.");
