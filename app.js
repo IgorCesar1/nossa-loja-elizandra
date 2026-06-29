@@ -5,7 +5,7 @@ import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/fir
 // CONFIGURAÇÕES
 // ==========================================
 // TODO: COLOQUE SEU NÚMERO DE WHATSAPP AQUI (Com código do país e DDD. Ex: 5511999999999)
-const WHATSAPP_NUMBER = "5511999999999"; 
+const WHATSAPP_NUMBER = "5581986140871"; 
 
 // Estado do Carrinho
 let cart = [];
@@ -181,11 +181,17 @@ cartModal.addEventListener('click', (e) => {
     if (e.target === cartModal) cartModal.classList.remove('active');
 });
 
-// Finalizar Pedido via WhatsApp
+// ... (mais adiante no checkoutBtn.addEventListener)
 checkoutBtn.addEventListener('click', () => {
     if (cart.length === 0) return;
 
-    let message = `*NOVO PEDIDO!*\n\n`;
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('pt-BR');
+    const formattedTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    let message = `*Esse é o meu pedido!*\n`;
+    message += `Data e horário do pedido: ${formattedDate} às ${formattedTime}\n\n`;
+    
     let total = 0;
 
     cart.forEach(item => {
@@ -195,9 +201,6 @@ checkoutBtn.addEventListener('click', () => {
         message += `Quantidade: ${item.quantity}\n`;
         message += `Valor unitário: R$ ${parseFloat(item.price).toFixed(2).replace('.', ',')}\n`;
         message += `Subtotal: R$ ${itemTotal.toFixed(2).replace('.', ',')}\n`;
-        if (item.imageUrl) {
-            message += `Ver foto: ${item.imageUrl}\n`;
-        }
         message += `------------------------\n`;
     });
 
@@ -206,6 +209,5 @@ checkoutBtn.addEventListener('click', () => {
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodedMessage}`;
     
-    // Abre o WhatsApp
     window.open(whatsappUrl, '_blank');
 });

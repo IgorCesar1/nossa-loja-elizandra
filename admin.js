@@ -71,18 +71,21 @@ productImageInput.addEventListener('change', (e) => {
     reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
-            // Comprimir a imagem usando Canvas para caber no Firestore (limite 1MB, vamos deixar bem leve)
+            // Aumentando limite para 1000px para ficar em HD e melhorar nitidez
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 600; // Tamanho ideal para celular
+            const MAX_WIDTH = 1000; // Tamanho HD
             const scaleSize = MAX_WIDTH / img.width;
             canvas.width = MAX_WIDTH;
             canvas.height = img.height * scaleSize;
 
             const ctx = canvas.getContext('2d');
+            
+            // Filtro para melhorar as cores e dar um aspecto mais "nítido/vivo"
+            ctx.filter = 'contrast(1.05) saturate(1.1)';
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-            // Converte para Base64 com qualidade de 70%
-            base64ImageString = canvas.toDataURL('image/jpeg', 0.7);
+            // Converte para Base64 com qualidade de 80%
+            base64ImageString = canvas.toDataURL('image/jpeg', 0.8);
             
             // Mostra o preview
             imagePreview.src = base64ImageString;
