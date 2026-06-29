@@ -188,8 +188,11 @@ checkoutBtn.addEventListener('click', () => {
     const now = new Date();
     const formattedDate = now.toLocaleDateString('pt-BR');
     const formattedTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    
+    // Gerar um número de pedido aleatório de 6 dígitos
+    const orderId = Math.floor(100000 + Math.random() * 900000);
 
-    let message = `*Esse é o meu pedido!*\n`;
+    let message = `*Esse é o meu pedido! (Nº ${orderId})*\n`;
     message += `Data e horário do pedido: ${formattedDate} às ${formattedTime}\n\n`;
     
     let total = 0;
@@ -197,7 +200,8 @@ checkoutBtn.addEventListener('click', () => {
     cart.forEach(item => {
         const itemTotal = item.price * item.quantity;
         total += itemTotal;
-        message += `🛍️ *${item.name}*\n`;
+        // O .trim() remove os espaços extras no início ou no fim do nome
+        message += `🛍️ *${item.name.trim()}*\n`;
         message += `Quantidade: ${item.quantity}\n`;
         message += `Valor unitário: R$ ${parseFloat(item.price).toFixed(2).replace('.', ',')}\n`;
         message += `Subtotal: R$ ${itemTotal.toFixed(2).replace('.', ',')}\n`;
